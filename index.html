@@ -3,68 +3,64 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Post Data - No Backend</title>
+    <title>Key System</title>
 </head>
 <body>
-    <h1>Post Your Data</h1>
+    <h1>Submit Your Information</h1>
 
-    <form id="postForm">
-        <label for="key">Key:</label><br>
-        <input type="text" id="key" name="key" required><br><br>
+    <!-- Key Entry Form (Visible Initially) -->
+    <div id="keyEntryForm">
+        <form id="keyForm">
+            <label for="key">Key (base64):</label><br>
+            <input type="text" id="key" name="key" required><br><br>
 
-        <label for="hwid">HWID:</label><br>
-        <input type="text" id="hwid" name="hwid" required><br><br>
+            <label for="hwid">HWID:</label><br>
+            <input type="text" id="hwid" name="hwid" required><br><br>
 
-        <label for="SecretKey">Secret Key:</label><br>
-        <input type="text" id="SecretKey" name="SecretKey"><br><br>
+            <label for="SecretKey">Secret Key:</label><br>
+            <input type="text" id="SecretKey" name="SecretKey" required><br><br>
 
-        <input type="submit" value="Submit">
-    </form>
+            <input type="submit" value="Submit">
+        </form>
+    </div>
+
+    <!-- Main UI (Initially Hidden) -->
+    <div id="mainUI" style="display: none;">
+        <h2>Welcome to the Real UI</h2>
+        <p>This is the protected area of the website.</p>
+    </div>
 
     <div id="response"></div>
 
     <script>
-        // Simulating a "database" with LocalStorage
-        function getDatabase() {
-            const db = localStorage.getItem('db');
-            return db ? JSON.parse(db) : {};
-        }
-
-        function setDatabase(db) {
-            localStorage.setItem('db', JSON.stringify(db));
-        }
-
-        // Handle form submission
-        document.getElementById('postForm').addEventListener('submit', function(event) {
+        document.getElementById('keyForm').addEventListener('submit', function(event) {
             event.preventDefault();
 
             const key = document.getElementById('key').value;
             const hwid = document.getElementById('hwid').value;
             const secretKey = document.getElementById('SecretKey').value;
 
-            const db = getDatabase();
+            const data = { key, hwid, SecretKey: secretKey };
 
-            if (!key || !hwid) {
-                document.getElementById('response').innerText = 'Error: Missing key or hwid';
-                return;
-            }
-
-            // Check if the key and HWID exist in the mock database
-            if (db[key] && db[key][hwid]) {
-                document.getElementById('response').innerText = 'Found: Key and HWID match!';
-            } else {
-                // Add new entry if SecretKey is provided
-                if (secretKey) {
-                    if (!db[key]) {
-                        db[key] = {};
-                    }
-                    db[key][hwid] = secretKey;
-                    setDatabase(db);
-                    document.getElementById('response').innerText = 'Added: New Key and HWID added to the database.';
+            fetch('http://127.0.0.1:5000/check_key', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(data)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    document.getElementById('keyEntryForm').style.display = 'none';
+                    document.getElementById('mainUI').style.display = 'block';
                 } else {
-                    document.getElementById('response').innerText = 'Error: Missing SecretKey for new entry.';
+                    document.getElementById('response').innerText = data.message;
                 }
-            }
+            })
+            .catch(error => {
+                document.getElementById('response').innerText = 'Error: ' + error.message;
+            });
         });
     </script>
 </body>
