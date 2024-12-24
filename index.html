@@ -7,29 +7,38 @@
     <style>
         body {
             font-family: Arial, sans-serif;
-            background-color: #f4f4f9;
+            background-color: #121212;
+            color: #fff;
             padding: 20px;
+            transition: background-color 0.3s, color 0.3s;
         }
         .container {
             max-width: 500px;
             margin: 0 auto;
-            background-color: white;
+            background-color: #1f1f1f;
             padding: 30px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
             border-radius: 10px;
+            transition: box-shadow 0.3s;
         }
         h2 {
             text-align: center;
+            font-size: 24px;
+            margin-bottom: 20px;
         }
         label, input {
             width: 100%;
             margin-bottom: 15px;
+            font-size: 16px;
         }
         input[type="text"], input[type="password"] {
-            padding: 10px;
+            padding: 12px;
             font-size: 16px;
-            border: 1px solid #ddd;
+            border: 1px solid #444;
             border-radius: 5px;
+            background-color: #333;
+            color: #fff;
+            transition: background-color 0.3s, border 0.3s;
         }
         input[type="submit"] {
             background-color: #4CAF50;
@@ -39,10 +48,15 @@
             font-size: 16px;
             cursor: pointer;
             border-radius: 5px;
+            transition: background-color 0.3s;
+        }
+        input[type="submit"]:hover {
+            background-color: #45a049;
         }
         .response {
             text-align: center;
             margin-top: 20px;
+            font-size: 18px;
         }
         .error {
             color: red;
@@ -59,7 +73,7 @@
         
         <form id="keyForm">
             <label for="key">Enter Key:</label>
-            <input type="text" id="key" name="key" required readonly value="Loading...">
+            <input type="text" id="key" name="key" required readonly value="Loading..." disabled>
 
             <label for="SecretKey">Secret Key:</label>
             <input type="password" id="SecretKey" name="SecretKey" required placeholder="Enter Secret Key">
@@ -71,22 +85,26 @@
     </div>
 
     <script>
-        // Fetch the key from the server (Python backend)
-        fetch('http://localhost:5000/validate_key', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                SecretKey: 'n2c2013c203c10231'  // Hardcoded secret key for simplicity
-            })
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.status === 'success') {
-                document.getElementById('key').value = data.key;
+        async function fetchKey() {
+            try {
+                const response = await fetch('http://localhost:5000/validate_key', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        SecretKey: 'n2c2013c203c10231'
+                    })
+                });
+                const data = await response.json();
+                if (data.status === 'success') {
+                    document.getElementById('key').value = data.key;
+                    document.getElementById('key').disabled = false;
+                }
+            } catch (error) {
+                console.error('Error fetching key:', error);
             }
-        });
+        }
 
         document.getElementById('keyForm').addEventListener('submit', function(event) {
             event.preventDefault();
@@ -106,14 +124,18 @@
                 const responseDiv = document.getElementById('response');
                 if (data.status === 'success') {
                     responseDiv.innerHTML = '<span class="success">Access granted! Welcome to the main UI.</span>';
+                    responseDiv.style.opacity = 1;
                 } else {
                     responseDiv.innerHTML = '<span class="error">' + data.message + '</span>';
+                    responseDiv.style.opacity = 1;
                 }
             })
             .catch(error => {
                 document.getElementById('response').innerHTML = 'Error: ' + error.message;
             });
         });
+
+        fetchKey();
     </script>
 </body>
 </html>
