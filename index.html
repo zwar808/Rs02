@@ -4,62 +4,114 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Key System</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f9;
+            padding: 20px;
+        }
+        .container {
+            max-width: 500px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 30px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            border-radius: 10px;
+        }
+        h2 {
+            text-align: center;
+        }
+        label, input {
+            width: 100%;
+            margin-bottom: 15px;
+        }
+        input[type="text"], input[type="password"] {
+            padding: 10px;
+            font-size: 16px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        input[type="submit"] {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+        .response {
+            text-align: center;
+            margin-top: 20px;
+        }
+        .error {
+            color: red;
+        }
+        .success {
+            color: green;
+        }
+    </style>
 </head>
 <body>
-    <h1>Submit Your Information</h1>
-
-    <!-- Key Entry Form (Visible Initially) -->
-    <div id="keyEntryForm">
+    <div class="container">
+        <h2>Key System</h2>
+        <p>Enter the key shown on the server:</p>
+        
         <form id="keyForm">
-            <label for="key">Key (base64):</label><br>
-            <input type="text" id="key" name="key" required><br><br>
+            <label for="key">Enter Key:</label>
+            <input type="text" id="key" name="key" required readonly value="Loading...">
 
-            <label for="hwid">HWID:</label><br>
-            <input type="text" id="hwid" name="hwid" required><br><br>
+            <label for="SecretKey">Secret Key:</label>
+            <input type="password" id="SecretKey" name="SecretKey" required placeholder="Enter Secret Key">
 
-            <label for="SecretKey">Secret Key:</label><br>
-            <input type="text" id="SecretKey" name="SecretKey" required><br><br>
-
-            <input type="submit" value="Submit">
+            <input type="submit" value="Validate Key">
         </form>
-    </div>
 
-    <!-- Main UI (Initially Hidden) -->
-    <div id="mainUI" style="display: none;">
-        <h2>Welcome to the Real UI</h2>
-        <p>This is the protected area of the website.</p>
+        <div id="response" class="response"></div>
     </div>
-
-    <div id="response"></div>
 
     <script>
+        // Fetch the key from the server (Python backend)
+        fetch('http://127.0.0.1:5000/validate_key', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                SecretKey: 'n2c2013c203c10231'  // Hardcoded secret key for simplicity
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                document.getElementById('key').value = data.key;
+            }
+        });
+
         document.getElementById('keyForm').addEventListener('submit', function(event) {
             event.preventDefault();
 
             const key = document.getElementById('key').value;
-            const hwid = document.getElementById('hwid').value;
             const secretKey = document.getElementById('SecretKey').value;
 
-            const data = { key, hwid, SecretKey: secretKey };
-
-            fetch('http://127.0.0.1:5000/check_key', {
+            fetch('http://127.0.0.1:5000/validate_key', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify(data)
+                body: JSON.stringify({ key, SecretKey: secretKey })
             })
             .then(response => response.json())
             .then(data => {
+                const responseDiv = document.getElementById('response');
                 if (data.status === 'success') {
-                    document.getElementById('keyEntryForm').style.display = 'none';
-                    document.getElementById('mainUI').style.display = 'block';
+                    responseDiv.innerHTML = '<span class="success">Access granted! Welcome to the main UI.</span>';
                 } else {
-                    document.getElementById('response').innerText = data.message;
+                    responseDiv.innerHTML = '<span class="error">' + data.message + '</span>';
                 }
             })
             .catch(error => {
-                document.getElementById('response').innerText = 'Error: ' + error.message;
+                document.getElementById('response').innerHTML = 'Error: ' + error.message;
             });
         });
     </script>
